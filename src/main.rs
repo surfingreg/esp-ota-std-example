@@ -2,47 +2,36 @@
 //! main.rs
 //! surfingreg
 //!
-//! Ref:
-//! https://github.com/faern/esp-ota/blob/aa51f220b0bfaf73d6142faea5e9472e0f106788/examples/ota_from_flash.rs
-//!
 
-const APP_VERSION: &str = "alpha";
+// const APP_VERSION: &'static str = "bravo";
+const APP_VERSION: &'static str = "alpha";
 
-fn main() {
-    println!("[main] Starting {APP_VERSION}...!");
-    println!("[main error] Starting {APP_VERSION}...!");
-    // esp_idf_svc::sys::link_patches();
+
+fn main()-> Result<(), Box<dyn std::error::Error>> {
     esp_idf_sys::link_patches();
-    // esp_idf_svc::log::EspLogger::initialize_default();
-
-    if APP_VERSION == "beta" {
-        println!("[beta::main] hello from ota beta");
+    if APP_VERSION == "bravo" {
+        println!("[main {}] hello", APP_VERSION);
+    //     esp_ota::rollback_and_reboot().expect("Failed to roll back to working app");
     } else {
-        let NEW_APP: &[u8] = include_bytes!("../beta.bin");
-        println!("[alpha::main] writing beta.bin...");
-        let mut ota = esp_ota::OtaUpdate::begin().unwrap();
-
-        for app_chunk in NEW_APP.chunks(4096) {
-            if let Err(err) = ota.write(app_chunk) {
-                println!("[main error] Failed to write chunk");
-                break;
-            }
+        println!("[main {}] hello", APP_VERSION);
+        let new_app: &[u8] = include_bytes!("../beta.bin");
+        println!("[main {APP_VERSION}] writing beta.bin...");
+        let mut ota = esp_ota::OtaUpdate::begin()?; // .unwrap();
+        for app_chunk in new_app.chunks(4096){
+            ota.write(app_chunk)?
         }
+        // Unless you also call set_as_boot_partition the new app will not start.
+        let mut completed_ota = ota.finalize()?;
 
-        //validate the written app
-        match ota.finalize() {
-            Err(e) => {
-                println!("[main error] Failed to validate image. {:?}", e);
-                ()
-            }
-            Ok(mut x) => {
-                println!("[main] setting boot partition...");
-                x.set_as_boot_partition().unwrap();
-                println!("[main] rebooting...");
-                x.restart();
-            }
-        };
+        // Sets the newly written to partition as the next partition to boot from.
+        println!("[main {APP_VERSION}] setting boot partition...");
+        completed_ota.set_as_boot_partition()?;
+
+        // Restarts the CPU, booting into the newly written app.
+        println!("[main {APP_VERSION}] restarting...");
+        completed_ota.restart();
+
     }
 
-    println!("[main] Done: {APP_VERSION}...!");
+    Ok(())
 }
