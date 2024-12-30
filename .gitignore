@@ -1,6 +1,5 @@
-/.vscode
-/.embuild
-/target
-/Cargo.lock
+target
+Cargo.lock
+.embuild
 .idea
-
+*.bin

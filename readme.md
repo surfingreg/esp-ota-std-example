@@ -1,5 +1,8 @@
 
 
+espflash flash --partition-table partitions.csv --monitor target/xtensa-esp32s3-espidf/release/esp-ota-std-ex
+
+
 
 error: failed to select a version for `esp-idf-sys`.
 ... required by package `esp-ota v0.2.0`
