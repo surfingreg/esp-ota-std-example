@@ -4,7 +4,7 @@
 //!
 
 use esp_idf_svc::ota::EspOta;
-use esp_idf_svc::partition::{EspPartitionIterator, EspPartitionType};
+use esp_idf_svc::partition::{EspPartitionIterator};
 
 #[cfg(feature = "bravo")]
 const APP_VERSION: &'static str = "bravo";
@@ -19,44 +19,39 @@ const NEW_APP: &[u8] = include_bytes!("../beta.bin");
 /// todo: need a repeatable way to push to the same partition (multiple ota partitions just alternate and don't 
 /// boot the the one being flashed.
 fn check_partitions(){
-
-    let part_iterator = unsafe {
-        EspPartitionIterator::new(None)
-            .unwrap()
-    };
+    let part_iterator = unsafe { EspPartitionIterator::new(None).unwrap() };
     println!("[check_partitions] {} partitions:", APP_VERSION);
-    for mut part in part_iterator {
+    for part in part_iterator {
         println!("[check_partitions] label: {}, type: {:?}, addr: {}, size: {}, erase_size: {}", part.label(), part.partition_type(), part.address(), part.size(), part.erase_size());
-
         // let offset = 0;    
         // let size = 0;
         // part.erase(offset, size).unwrap()
         // let mut esp = EspOta::new().expect("[main]");
         // println!("factory reset result: {:?}", esp_idf_svc::ota::EspOta::factory_reset(&mut esp));
+        
 
     }
-    
-    
 }
 
 fn main()-> Result<(), Box<dyn std::error::Error>> {
 
     esp_idf_svc::sys::link_patches();
     check_partitions();
+
+
     
-    if APP_VERSION == "bravo" { println!("[main {}] hello, bravo loaded", APP_VERSION);
-        // esp_ota::rollback_and_reboot().expect("rollback_and_reboot didn't work");
-        // unsafe { esp_idf_sys::esp_partition_unload_all() }
-    
-        // println!("[main {}] marking {} invalide and rebooting...", APP_VERSION, APP_VERSION);
-        // unsafe {esp_idf_sys::esp_ota_mark_app_invalid_rollback_and_reboot();}
+    if APP_VERSION == "bravo" { 
+        println!("[main {}] hello, bravo loaded, marking bravo invalid and rolling back...", APP_VERSION);
+        let mut esp = EspOta::new().expect("[main]");
+        println!("[main {}] mark_running_slot_invalid_and_reboot: {:?}", APP_VERSION, esp.mark_running_slot_invalid_and_reboot());
+        
     
     } else {
     
         #[cfg(feature = "alpha")]
         {
             println!("[main {}] hello", APP_VERSION);
-            esp_ota::mark_app_valid();
+            // esp_ota::mark_app_valid();
     
             println!("[main {APP_VERSION}] writing beta.bin...");
             let mut ota = esp_ota::OtaUpdate::begin()?; // .unwrap();
