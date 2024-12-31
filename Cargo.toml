@@ -9,7 +9,12 @@ rust-version = "1.82"
 name = "esp-ota-std-ex"
 harness = false
 
-# minimizing rust
+# https://doc.rust-lang.org/cargo/reference/features.html#the-default-feature
+[features]
+alpha = ["dep:esp-ota"]
+bravo = []
+
+# minimize rust
 # https://github.com/johnthagen/min-sized-rust
 [profile.release]
 strip = true
@@ -19,9 +24,11 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
-esp-idf-sys = {version = "0.35.0", features = ["std"]}
-#esp-ota = { version = "0.2.1", path = "../esp-ota", features = ["default"]}
-esp-ota = { version="0.2.1", git = "https://github.com/surfingreg/esp-ota.git"}
+# esp-idf-sys = {version = "0.35.0"}
+esp-idf-svc = {version = "0.49.1", path="../esp-idf-svc"}
+
+esp-ota = { version = "0.2.1", path = "../esp-ota", optional = true}
+# esp-ota = { version="0.2.1", git = "https://github.com/surfingreg/esp-ota.git", optional = true}
 
 [build-dependencies]
 embuild = "0.32.0"
